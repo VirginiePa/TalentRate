@@ -2,13 +2,15 @@
 
 namespace App\Controller;
 //namespace App\Controller\Cours;
-
+use App\Entity\Cours;
 use App\Repository\CoursRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Entity\Cours;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Serializer\SerializerInterface;
 
 
 
@@ -57,26 +59,18 @@ class PlanningGlobalController extends AbstractController
     }
 
     /**
-     * @Route("/planning/globalNew", name="planning_globalNew", methods={"GET","POST"})
+     * @Route("/planning/globalNew", name="planning_globalNew", methods={"POST"})
      */
-    public function addCours(Request $request): Response
+   
+    public function new(Request $request, SerializerInterface $serializer, EntityManagerInterface $entityManager)
     {
-        $cours = new Cours();
-        $request->getContent();
-        $form = $this->createForm(Cours::class, $cours);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->persist($cours);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('planning_globalNew');
-        }
-
-        // return $this->render('admin/newsletter/new.html.twig', [
-        //     'newsletter' => $newsletter,
-        //     'form' => $form->createView(),
-        //]);
+        $cours = $serializer->deserialize($request->getContent(), Cours::class, 'json');
+        $entityManager->persist($cours);
+        $entityManager->flush();
+        $data = [
+            'status' => 201,
+            'message' => 'Le cours a bien été ajouté'
+        ];
+        return new JsonResponse($data, 201);
     }
 }
